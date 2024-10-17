@@ -1,9 +1,44 @@
 I'm a Devops Engineer
 =====================
-
+> This note is best for Ubuntu. If you have another DISTRO, looking for guide in the internet, it's simmilar to my note 
 ## 1. install tool
-
+> First of all, we have to install tools that necessary for your project
 ### 1.1 Docker
+* Install Docker
+```bash
+sudo apt-get update
+sudo apt-get install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+```
+
+* Manage Docker as a non-root user
+
+    * Create the docker group.
+    ```bash
+    sudo groupadd docker
+    ```
+    * Add your user to the docker group
+    ```bash
+    sudo usermod -aG docker $USER
+    ```
+    * Log out and log back in so that your group membership is re-evaluated.
+    ```bash
+    newgrp docker
+    ```
+    * Verify that you can run docker commands without sudo.
+    ```bash
+    docker ps
+    ```
 ### 1.2 Ansible
 * Installing Ansible
 ```bash
@@ -35,6 +70,101 @@ db1.example.com
     ```bash
     ansible -i inventory.ini all -m ping
     ```
+
+### 1.3 Kubernetes
+#### 1.3.1 Kubernetes in VM
+* Requirements
+    * VM that responsible as master node and worker node
+
+    | VM | Minimum Memory | OS | Role | Require Pakage |
+    | --- | --- | --- | --- | --- |
+    | VM 1 | 1500MB | Ubuntu | Master Node | None |
+    | VM 2 | 1024MB | Ubuntu | Worker Node | None | 
+    | ... | ... | ... | ... | ... |
+    | VM n | 1024MB | Ubuntu | kubespray | Docker, Ansible, Python |
+
+    * [Ansible](#12-ansible)
+    * [kubespray](https://github.com/kubernetes-sigs/kubespray)
+    * [Docker](#11-docker)
+    * Python
+* Install 
+    * Get kubespray repository
+    ```bash
+    git clone https://github.com/kubernetes-sigs/kubespray
+    cd kubespray
+    ```
+    * Install and active Python venv
+        * Install `python-venv`
+        ```bash
+        sudo apt install python3-venv
+        ```
+        * Active to python venv
+        ```bash
+        python3 -m venv .kube-venv
+        source .kube-venv/bin/activate
+        ```
+        * Install necessary package
+        ```bash
+        pip install -r requirements.txt
+        pip install -r contrib/inventory_builder/requirements.txt
+        ```
+    * Prepare host file
+        * Copy `inventory/sample` as `inventory/mycluster`
+        ```bash
+        cp -rfp inventory/sample inventory/mycluster
+        ```
+        * Update Ansible inventory file with inventory builder (change IP to actual IP address of VM)
+        ```bash
+        declare -a IPS=(10.10.1.3 10.10.1.4 10.10.1.5)
+        CONFIG_FILE=inventory/mycluster/hosts.yaml python3 contrib/inventory_builder/inventory.py ${IPS[@]}
+        ```
+        * Review and change parameters under `inventory/mycluster/group_vars`
+        ```bash
+        cat inventory/mycluster/group_vars/k8s_cluster/k8s-cluster.yml
+        ```
+        May modify Container Runtime at `container_manager:`, and Network Plugin at `kube_network_plugin: `
+    * Run Kubespray container
+    ```
+    git checkout v2.26.0
+    docker pull quay.io/kubespray/kubespray:v2.26.0
+    docker run --rm -it \
+        --mount type=bind,source="${HOME}"/.ssh/id_rsa,dst=/root/.ssh/id_rsa \
+        --mount type=bind,source="$(pwd)"/inventory/mycluster,dst=/inventory \
+        quay.io/kubespray/kubespray:v2.26.0 bash
+    ```
+    * Run playbook to build k8s cluster
+    ```
+    ansible-playbook -i /inventory/hosts.yaml  --become --become-user=root cluster.yml
+    ```
+    * Remove all installation
+    ```
+    ansible-playbook -i /inventory/hosts.yaml  --become --become-user=root reset.yml
+    ```
+
+### 1.4 kubectl
+* Install kubectl 
+```
+curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.30.0/2024-05-12/bin/linux/amd64/kubectl
+chmod +x kubectl
+mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$HOME/bin:$PATH
+mkdir -p ~/.kube
+```
+* Defalut configuration file of k8s is in `/etc/kubernetes/admin.conf`, We need to copy it to defalut `$KUBECONFIG`
+```
+sudo chown $(id -u):$(id -g) ~/.kube/config
+export KUBECONFIG=~/.kube/config
+export PATH="kubectl:$PATH"
+source <(kubectl completion bash)
+```
+
+### 1.5 Helm
+```
+curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+sudo apt-get install apt-transport-https --yes
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+sudo apt-get update
+sudo apt-get install helm
+```
 # Some tools
 ## Set up ssh using SSH-key
 1. Generate SSH Key Pair on the Client `-C` is **optional**
