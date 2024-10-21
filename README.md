@@ -108,7 +108,7 @@ db1.example.com
         pip install -r requirements.txt
         pip install -r contrib/inventory_builder/requirements.txt
         ```
-        * Ensure kubespray VM can ssh to all node without password (see in #)
+        * Ensure kubespray VM can ssh to all node without password (see in [Generate SSH key](#set-up-ssh-using-ssh-key) )
     * Prepare host file
         * Copy `inventory/sample` as `inventory/mycluster`
         ```bash
@@ -185,6 +185,10 @@ cat ~/.ssh/id_rsa.pub
 * Copy this key and append to `~/.ssh/authorized_keys` from server seprate by `endline`
 ```bash
 cat ~/.ssh/authorized_keys
+```
+* **note**: if you have private key in some where and copy to `~/.ssh/id_rsa`, the `~/.ssh/id_rsa.pub` must be removed and you have to change permission for this private key:
+```bash
+chmod 600 ~/.ssh/id_rsa
 ```
 3. Verify SSH Key-Based Authentication
 * If private key is `~/.ssh/id_rsa`
