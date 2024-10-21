@@ -108,6 +108,7 @@ db1.example.com
         pip install -r requirements.txt
         pip install -r contrib/inventory_builder/requirements.txt
         ```
+        * Ensure kubespray VM can ssh to all node without password (see in #)
     * Prepare host file
         * Copy `inventory/sample` as `inventory/mycluster`
         ```bash
@@ -118,6 +119,7 @@ db1.example.com
         declare -a IPS=(10.10.1.3 10.10.1.4 10.10.1.5)
         CONFIG_FILE=inventory/mycluster/hosts.yaml python3 contrib/inventory_builder/inventory.py ${IPS[@]}
         ```
+        * note: you must add `ansible_user: root` to list host
         * Review and change parameters under `inventory/mycluster/group_vars`
         ```bash
         cat inventory/mycluster/group_vars/k8s_cluster/k8s-cluster.yml
