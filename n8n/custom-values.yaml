@@ -1,0 +1,47 @@
+image:
+  repository: n8nio/n8n
+  pullPolicy: IfNotPresent
+  tag: ""
+imagePullSecrets: []
+nameOverride:
+fullnameOverride:
+hostAliases: []
+ingress:
+  enabled: false
+  annotations: {}
+  className: ""
+  hosts:
+    - host: workflow.example.com
+      paths: []
+  tls:
+    - hosts:
+        - workflow.example.com
+      secretName: host-domain-cert
+main:
+  config:
+    db:
+      type: postgresdb
+      postgresdb:
+        host: postgres-postgresql.postgres.svc.cluster.local
+        user: postgres
+  secret:
+    n8n:
+      encryption_key: "a-random-string"
+  extraEnv: &extraEnv
+    DB_POSTGRESDB_PASSWORD:
+      valueFrom:
+        secretKeyRef:
+          name: postgres-secret
+          key: password
+          
+worker:
+  enabled: false
+
+webhook:
+  enabled: false
+
+extraManifests: []
+extraTemplateManifests: []
+
+valkey:
+  enabled: false
