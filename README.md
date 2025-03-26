@@ -73,7 +73,7 @@ db1.example.com
 
 ### 1.3 Kubernetes
 #### 1.3.1 Kubernetes in VM
-* Requirements
+1. Requirements
     * VM that responsible as master node and worker node
 
     | VM | Minimum Memory | OS | Role | Require Pakage |
@@ -87,7 +87,7 @@ db1.example.com
     * [kubespray](https://github.com/kubernetes-sigs/kubespray)
     * [Docker](#11-docker)
     * Python
-* Install 
+2. Install 
     * Get kubespray repository
     ```bash
     git clone https://github.com/kubernetes-sigs/kubespray
@@ -142,6 +142,64 @@ db1.example.com
     ```
     ansible-playbook -i /inventory/hosts.yaml  --become --become-user=root reset.yml
     ```
+#### 1.3.2 install minikube in ubuntu
+1. Install Docker
+* Set up Docker's apt repository.
+```
+# Add Docker's official GPG key:
+sudo apt-get update
+sudo apt-get install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add the repository to Apt sources:
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+```
+* Install the Docker packages.
+```
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y 
+```
+* Ensure Docker be manageable as a non-root user
+```
+sudo groupadd docker
+sudo usermod -aG docker $USER
+newgrp docker
+docker ps
+```
+2. Install minikube
+```
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
+rm minikube-linux-amd64
+```
+3. Install kubectl 
+```
+curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
+chmod +x kubectl
+sudo mv kubectl /usr/local/bin/
+```
+4. Start Minikube with Docker
+```
+minikube start --driver=docker
+```
+5. Verify installation
+* Check status of MiniKube installation
+```
+minikube status
+```
+* Check kubectl status
+```
+minikube kubectl -- get node -owide
+```
+6. (Optional) Reduce minikube command
+```
+alias kubectl="minikube kubectl --"
+```
 
 ### 1.4 kubectl
 * Install kubectl 
